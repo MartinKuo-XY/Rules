@@ -1,5 +1,10 @@
 # Shopee
 DOMAIN-SUFFIX,shopee.ph
+
+# Amazon
 DOMAIN-SUFFIX,amazon.com
 DOMAIN-SUFFIX,amazon.com.mx
 DOMAIN-SUFFIX,amazon.ca
+
+# IPIP
+DOMAIN-SUFFIX,ipip.net
