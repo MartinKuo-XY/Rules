@@ -8,3 +8,6 @@ DOMAIN-SUFFIX,amazon.ca
 
 # IPIP
 DOMAIN-SUFFIX,ipip.net
+
+# Paypal
+DOMAIN-KEYWORD, paypal.com
