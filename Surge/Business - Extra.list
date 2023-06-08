@@ -37,6 +37,7 @@ DOMAIN-SUFFIX, acs.m.taobao.com
 DOMAIN-SUFFIX, lazada.com
 DOMAIN-SUFFIX, lazada.com.ph
 DOMAIN-SUFFIX, acs.m.taobao.com
+DOMAIN-SUFFIX, flurry.com
 DOMAIN-KEYWORD, alibaba
 DOMAIN-KEYWORD, taobao.com
 DOMAIN-KEYWORD, lazada.com
@@ -46,3 +47,4 @@ DOMAIN-KEYWORD, aliyun
 DOMAIN-KEYWORD, alicdn
 DOMAIN-KEYWORD, lazada.com.ph
 DOMAIN-KEYWORD, acs-m
+IP-CIDR, 47.0.0.0/8
