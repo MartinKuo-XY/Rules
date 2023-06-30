@@ -10,6 +10,8 @@ PROCESS-NAME,/Applications/Duoke.app/Contents/Frameworks/Duoke Helper.app/Conten
 #微信
 PROCESS-NAME,/Applications/WeChat.app/Contents/MacOS/WeChat
 
-
 #Domain
 DOMAIN-SUFFIX,BigSeller.pro
+
+#LianLian
+DOMAIN-Keyword,lianlianpay
