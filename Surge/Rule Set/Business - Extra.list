@@ -28,24 +28,4 @@ DOMAIN-KEYWORD, live.com
 DOMAIN-KEYWORD, sfx.ms
 DOMAIN-KEYWORD, cloudflare.com
 
-# Lazada 
-DOMAIN-SUFFIX, slatic.net
-DOMAIN-SUFFIX, mmstat.com
-DOMAIN-SUFFIX, alicdn.com
-DOMAIN-SUFFIX, m.taobao.com
-DOMAIN-SUFFIX, acs.m.taobao.com
-DOMAIN-SUFFIX, lazada.com
-DOMAIN-SUFFIX, lazcdn.com
-DOMAIN-SUFFIX, lazada.com.ph
-DOMAIN-SUFFIX, acs.m.taobao.com
-DOMAIN-SUFFIX, flurry.com
-DOMAIN-KEYWORD, alibaba
-DOMAIN-KEYWORD, taobao.com
-DOMAIN-KEYWORD, lazada.com
-DOMAIN-KEYWORD, slatic.net
-DOMAIN-KEYWORD, aliapp
-DOMAIN-KEYWORD, aliyun
-DOMAIN-KEYWORD, alicdn
-DOMAIN-KEYWORD, lazada.com.ph
-DOMAIN-KEYWORD, acs-m
-IP-CIDR, 47.0.0.0/8
+
