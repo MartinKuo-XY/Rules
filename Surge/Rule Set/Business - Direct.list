@@ -10,6 +10,12 @@ PROCESS-NAME,/Applications/Duoke.app/Contents/Frameworks/Duoke Helper.app/Conten
 #微信
 PROCESS-NAME,/Applications/WeChat.app/Contents/MacOS/WeChat
 
+#Amazon Sellercentral
+DOMAIN,sellercentral.amazon.com
+DOMAIN-SUFFIX,amazon.com
+DOMAIN-KEYWORD,sellercentral.amazon
+
+
 #Domain
 DOMAIN-SUFFIX,BigSeller.pro
 
