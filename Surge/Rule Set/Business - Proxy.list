@@ -11,3 +11,6 @@ DOMAIN-SUFFIX,ipip.net
 
 # Paypal
 DOMAIN-KEYWORD, paypal.com
+
+# Cloudflare
+DOMAIN-SUFFIX,cloudflare.com
