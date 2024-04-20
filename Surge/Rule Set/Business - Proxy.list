@@ -14,3 +14,8 @@ DOMAIN-KEYWORD, paypal.com
 
 # Cloudflare
 DOMAIN-SUFFIX,cloudflare.com
+
+# Ali 
+DOMAIN-KEYWORD, aliapp
+DOMAIN-KEYWORD, aliyun
+DOMAIN-KEYWORD, alicdn
