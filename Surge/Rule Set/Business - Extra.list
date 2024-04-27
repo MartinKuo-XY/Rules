@@ -12,15 +12,3 @@ DOMAIN-KEYWORD, gvt3.com
 DOMAIN-KEYWORD, cloudflare.com
 DOMAIN-KEYWORD, globe
 
-# Lazada 
-DOMAIN-SUFFIX, slatic.net
-DOMAIN-SUFFIX, mmstat.com
-DOMAIN-SUFFIX, lazada.com
-DOMAIN-SUFFIX, lazcdn.com
-DOMAIN-SUFFIX, lazada.com.ph
-DOMAIN-SUFFIX, flurry.com
-DOMAIN-KEYWORD, lazada.com
-DOMAIN-KEYWORD, slatic.net
-DOMAIN-KEYWORD, lazada.com.ph
-DOMAIN-KEYWORD, acs-m
-IP-CIDR, 47.0.0.0/8
