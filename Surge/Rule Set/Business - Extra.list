@@ -10,6 +10,7 @@ DOMAIN-KEYWORD, gvt3.com
 DOMAIN-KEYWORD, cloudflare.com
 DOMAIN-KEYWORD, chatgpt
 DOMAIN-SUFFIX, api-iam.intercom.io
+DOMAIN-SUFFIX, cdn.oaistatic.com
 
 # Lazada 
 DOMAIN-SUFFIX, slatic.net
