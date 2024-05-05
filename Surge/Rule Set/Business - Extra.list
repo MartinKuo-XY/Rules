@@ -9,7 +9,7 @@ DOMAIN-KEYWORD, gvt1.com
 DOMAIN-KEYWORD, gvt3.com
 DOMAIN-KEYWORD, cloudflare.com
 DOMAIN-KEYWORD, chatgpt
-DOMAIN, api-iam.intercom.io
+DOMAIN-SUFFIX, intercom.io
 DOMAIN, cdn.oaistatic.com
 
 # Lazada 
