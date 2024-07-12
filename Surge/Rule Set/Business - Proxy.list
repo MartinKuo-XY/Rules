@@ -10,8 +10,13 @@ DOMAIN-SUFFIX,amazon.ca
 DOMAIN-SUFFIX,ipip.net
 
 # Paypal
-DOMAIN-KEYWORD, paypal.com
+DOMAIN-KEYWORD,paypal.com
 
 # Cloudflare
 DOMAIN-SUFFIX,cloudflare.com
 
+# Megalayer
+DOMAIN-KEYWORD,megalayer
+
+# Lightlayer
+DOMAIN-SUFFIX,lightlayer.net
