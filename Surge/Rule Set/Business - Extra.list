@@ -24,3 +24,9 @@ DOMAIN-KEYWORD, slatic.net
 DOMAIN-KEYWORD, lazada.com.ph
 DOMAIN-KEYWORD, acs-m
 IP-CIDR, 47.0.0.0/8
+
+# Megalayer
+DOMAIN-KEYWORD,megalayer
+
+# Lightlayer
+DOMAIN-SUFFIX,lightlayer.net
