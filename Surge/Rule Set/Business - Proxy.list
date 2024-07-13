@@ -15,8 +15,3 @@ DOMAIN-KEYWORD,paypal.com
 # Cloudflare
 DOMAIN-SUFFIX,cloudflare.com
 
-# Megalayer
-DOMAIN-KEYWORD,megalayer
-
-# Lightlayer
-DOMAIN-SUFFIX,lightlayer.net
