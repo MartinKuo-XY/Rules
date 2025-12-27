@@ -1,0 +1,5 @@
+# UpdateTime：2025-12-26 03:02:46
+# RuleCount：3
+DOMAIN, beta.apple.com
+DOMAIN, testflight.apple.com
+DOMAIN-KEYWORD, testflight
