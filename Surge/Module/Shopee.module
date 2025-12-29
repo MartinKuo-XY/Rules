@@ -2,5 +2,5 @@
 #!desc=Shopee 分流规则
 
 [Rule]
-DOMAIN-SUFFIX,shopee.ph,DIRECT
-DOMAIN-SUFFIX,shopee.co.th,DIRECT
+DOMAIN-SUFFIX,shopee.ph,Proxy.Philippines
+DOMAIN-SUFFIX,shopee.co.th,Proxy.Thailand
