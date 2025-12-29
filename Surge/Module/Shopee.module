@@ -1,3 +1,6 @@
+#!name=Shopee
+#!desc=Shopee 分流规则
+
 [Rule]
 DOMAIN-SUFFIX,shopee.ph,DIRECT
 DOMAIN-SUFFIX,shopee.co.th,DIRECT
