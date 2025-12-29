@@ -1,5 +1,3 @@
-# Shopee平台各个站点的分流规则
-
 [rules]
 DOMAIN-SUFFIX,shopee.ph,Proxy.Philippines
 DOMAIN-SUFFIX,shopee.co.th,Proxy.Thailand
