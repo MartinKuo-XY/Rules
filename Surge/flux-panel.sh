@@ -16,9 +16,9 @@ get_architecture() {
     esac
 }
 
-# 兼容旧版的下载地址（固定 v2.11.2）
+# 兼容旧版的下载地址（固定 v2.11.2，直接二进制文件）
 ARCH=$(get_architecture)
-DOWNLOAD_URL="https://github.com/go-gost/gost/releases/download/v2.11.2/gost-linux-${ARCH}-2.11.2.gz"
+DOWNLOAD_URL="https://github.com/go-gost/gost/releases/download/v2.11.2/gost-linux-${ARCH}-2.11.2"
 
 INSTALL_DIR="/opt/gost"
 
@@ -149,11 +149,14 @@ install_gost() {
 
   [[ -f "$INSTALL_DIR/gost" ]] && echo "🧹 删除旧文件 gost" && rm -f "$INSTALL_DIR/gost"
 
-  echo "⬇️ 下载并解压 gost 中..."
-  curl -L "$DOWNLOAD_URL" -o "$INSTALL_DIR/gost.gz"
-  gunzip -f "$INSTALL_DIR/gost.gz"
+  echo "⬇️ 下载 gost ${DOWNLOAD_URL} ..."
+  curl -L --fail "$DOWNLOAD_URL" -o "$INSTALL_DIR/gost"
+  if [[ ! -s "$INSTALL_DIR/gost" ]]; then
+      echo "❌ 下载失败，请检查链接是否正确或网络是否正常。"
+      exit 1
+  fi
   chmod +x "$INSTALL_DIR/gost"
-  echo "✅ 下载并解压完成"
+  echo "✅ 下载完成"
 
   echo "🔎 gost 版本：$($INSTALL_DIR/gost -V)"
 
@@ -216,9 +219,12 @@ update_gost() {
   fi
   check_and_install_tcpkill
 
-  echo "⬇️ 下载并解压兼容版..."
-  curl -L "$DOWNLOAD_URL" -o "$INSTALL_DIR/gost.new.gz"
-  gunzip -f "$INSTALL_DIR/gost.new.gz"
+  echo "⬇️ 下载兼容版..."
+  curl -L --fail "$DOWNLOAD_URL" -o "$INSTALL_DIR/gost.new"
+  if [[ ! -s "$INSTALL_DIR/gost.new" ]]; then
+      echo "❌ 下载失败，请检查链接是否正确或网络是否正常。"
+      return 1
+  fi
   mv "$INSTALL_DIR/gost.new" "$INSTALL_DIR/gost"
   chmod +x "$INSTALL_DIR/gost"
 
@@ -228,7 +234,7 @@ update_gost() {
   echo "✅ 更新完成，服务已重新启动。"
 }
 
-# 卸载功能保持不变
+# 卸载功能
 uninstall_gost() {
   echo "🗑️ 开始卸载 GOST..."
   read -p "确认卸载 GOST 吗？此操作将删除所有相关文件 (y/N): " confirm
