@@ -8,3 +8,6 @@ DOMAIN-SUFFIX,shopee.co.th,Proxy.Thailand
 
 # Amazon
 DOMAIN-SUFFIX,amazon.com,Proxy.Philippines
+
+# BigSeller
+DOMAIN-SUFFIX,bigseller.pro,大陆直连
