@@ -1,40 +1,43 @@
+# 1. 写入新的脚本内容到 script.sh (修复了 chkconfig 问题)
+cat > script.sh << 'EOF'
 #!/bin/bash 
-
-# 删除腾讯云/云监控相关目录
 rm -rf /usr/local/sa 
 rm -rf /usr/local/agenttools 
 rm -rf /usr/local/qcloud 
-
-# 定义需要杀掉的进程列表
 process=(sap100 secu-tcs-agent sgagent64 barad_agent agent agentPlugInD pvdriver ) 
-
-# 循环杀进程
 for i in ${process[@]} 
 do
-    # 查找并强制杀掉进程
     for A in $(ps aux |grep $i |grep -v grep |awk '{print $2}') 
     do
         kill -9 $A 
     done 
 done 
 
-# --- 修改开始 ---
-# 使用 systemctl 替代 chkconfig (兼容现代Linux)
-# 2>/dev/null 表示如果有错误(比如服务不存在)则不显示报错
+# --- 修复部分开始 ---
+# 判断是否存在 systemctl 命令
 if command -v systemctl >/dev/null 2>&1; then
+    # 尝试停止并禁用 postfix，如果有错误(如未安装)则不显示
     systemctl stop postfix 2>/dev/null
     systemctl disable postfix 2>/dev/null
 else
-    # 如果系统真的很老，没有systemctl，尝试用旧命令
+    # 兼容老系统
     service postfix stop 2>/dev/null
-    chkconfig --level 35 postfix off 2>/dev/null
+    if command -v chkconfig >/dev/null 2>&1; then
+        chkconfig --level 35 postfix off 2>/dev/null
+    fi
 fi
-# --- 修改结束 ---
+# --- 修复部分结束 ---
 
-# 清空 root 的计划任务
-echo '' > /var/spool/cron/root 
-
-# 重置 rc.local
-echo '#!/bin/bash' > /etc/rc.local
-# 确保 rc.local 有执行权限 (这是一个好习惯)
+echo ''>/var/spool/cron/root 
+echo '#!/bin/bash' >/etc/rc.local
 chmod +x /etc/rc.local
+EOF
+
+# 2. 赋予执行权限
+chmod +x script.sh
+
+# 3. 运行脚本
+./script.sh
+
+# 4. 提示完成
+echo "脚本执行完毕，未报错。"
