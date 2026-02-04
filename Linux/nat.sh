@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Update: 强制指定香港ISP DNS (PCCW) 并使用 TCP 协议
+# Update: 彻底解决国内机器无法获取海外视角的问题 (采用远程API代理查询)
 # Usage: ./script.sh
 
 # --- 1. 获取域名 ---
@@ -35,40 +35,35 @@ echo "🔍 正在检测域名: $DOMAIN"
 echo "⏳ 请稍候..."
 echo "========================================="
 
+CN_DNS="114.114.114.114"
+
 # --- 3. 解析逻辑 ---
 
 # 【大陆视角】
-# 使用 114 DNS (UDP)
-# 只要在国内，这肯定返回国内优化 IP
-CN_DNS="114.114.114.114"
+# 直接用本机向 114DNS 查询。因为你在国内，这会返回国内 IP。
 CN_IPS=$(dig +short "$DOMAIN" @"$CN_DNS" +time=2 | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u)
 
-# 【香港视角】(核心修改)
-# 策略：直接向香港 PCCW (电讯盈科) 的 DNS 发起 TCP 查询
-# 1. IP: 202.14.67.4 (PCCW 公共 DNS)
-# 2. 协议: +tcp (绕过 NAT 机器的 UDP 53 劫持)
-# 3. 如果 PCCW 连不上，尝试 HKBN (香港宽频) 203.80.96.10
+# 【海外视角】(关键修改)
+# 既然本机查会被智能分流回国内，我们请求美国的 API (hackertarget) 帮我们查。
+# 这个请求是由美国的服务器发起的，所以一定会得到海外的 IP。
+HK_IPS=$(curl -s "https://api.hackertarget.com/dnslookup/?q=$DOMAIN" \
+         | grep "^A" | awk '{print $3}' | sort -u)
 
-HK_DNS_IP="202.14.67.4" # PCCW
-HK_IPS=$(dig +short "$DOMAIN" @"$HK_DNS_IP" +tcp +time=3 +tries=1 | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u)
-
-# 如果 PCCW 失败（可能被墙或超时），尝试备用 HKBN
+# 如果上面的 API 挂了，用备用 API (Google DNS JSON，不带 ECS，通常返回美国结果)
 if [[ -z "$HK_IPS" ]]; then
-    HK_DNS_IP="203.80.96.10" # HKBN
-    HK_IPS=$(dig +short "$DOMAIN" @"$HK_DNS_IP" +tcp +time=3 +tries=1 | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u)
+   HK_IPS=$(curl -s "https://dns.google/resolve?name=$DOMAIN&type=A" \
+            | grep -oE '"data":"[0-9]{1,3}(\.[0-9]{1,3}){3}"' \
+            | cut -d'"' -f4 | sort -u)
 fi
 
-echo -e "\n🌏 [大陆视角] 解析 IP (DNS: 114.114.114.114)："
+echo -e "\n🌏 [大陆视角] 解析 IP (DNS: $CN_DNS)："
 if [[ -n "$CN_IPS" ]]; then echo "$CN_IPS"; else echo "❌ 未解析到 IP"; fi
 
-echo -e "\n🇭🇰 [香港视角] 解析 IP (DNS: $HK_DNS_IP via TCP)："
-if [[ -n "$HK_IPS" ]]; then 
-    echo "$HK_IPS"
-else 
-    echo "❌ 获取失败 (可能原因: 防火墙拦截了到香港的 TCP DNS 流量)"
-fi
+echo -e "\n🌍 [海外视角] 解析 IP (远程 API 代理查询)："
+if [[ -n "$HK_IPS" ]]; then echo "$HK_IPS"; else echo "❌ 未解析到 IP"; fi
 
 # --- 4. 本机出口 ---
+# 你的 NAT 机出口肯定还是国内 IP，这是正常的
 EXIT_IP=$(curl -s --max-time 3 https://api.ip.sb/ip -A "Mozilla/5.0")
 [[ -z "$EXIT_IP" ]] && EXIT_IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
@@ -84,10 +79,11 @@ for ip in $ALL_IPS; do
     
     TAG=""
     [[ "$CN_IPS" =~ "$ip" ]] && TAG="[大陆入口]"
-    [[ "$HK_IPS" =~ "$ip" ]] && TAG="${TAG}[香港入口]"
+    [[ "$HK_IPS" =~ "$ip" ]] && TAG="${TAG}[海外入口]"
     [[ "$EXIT_IP" == "$ip" ]] && TAG="${TAG}[本机出口]"
     
     echo -e "$ip \t→ ${INFO:-未知} \t$TAG"
 done
 
 echo -e "\n✅ 完成。"
+# 提示：如果大陆入口和海外入口依然一样，说明该域名没有做国内外分流，全球都是同一个IP。
