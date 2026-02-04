@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Update: 修复NAT机DNS劫持问题 (使用DoH获取海外IP)
-# Usage: ./script.sh [domain] OR ./script.sh (then input)
+# Update: 强制指定香港ISP DNS (PCCW) 并使用 TCP 协议
+# Usage: ./script.sh
 
 # --- 1. 获取域名 ---
 DOMAIN="$1"
@@ -35,25 +35,38 @@ echo "🔍 正在检测域名: $DOMAIN"
 echo "⏳ 请稍候..."
 echo "========================================="
 
-# --- 3. 解析 (核心修改部分) ---
+# --- 3. 解析逻辑 ---
 
+# 【大陆视角】
+# 使用 114 DNS (UDP)
+# 只要在国内，这肯定返回国内优化 IP
 CN_DNS="114.114.114.114"
-
-# [大陆解析] 依然使用 DIG (UDP)，通常国内环境不需抗劫持
 CN_IPS=$(dig +short "$DOMAIN" @"$CN_DNS" +time=2 | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u)
 
-# [海外解析] 改用 DoH (DNS over HTTPS)
-# 原因：防止 NAT VPS 的 UDP 53 端口被强制劫持到国内 DNS
-# 我们直接请求 Cloudflare 的 HTTPS 接口，这无法被劫持
-HK_IPS=$(curl -s -H "accept: application/dns-json" "https://cloudflare-dns.com/dns-query?name=$DOMAIN&type=A" \
-         | grep -oE '"data":"[0-9]{1,3}(\.[0-9]{1,3}){3}"' \
-         | cut -d'"' -f4 | sort -u)
+# 【香港视角】(核心修改)
+# 策略：直接向香港 PCCW (电讯盈科) 的 DNS 发起 TCP 查询
+# 1. IP: 202.14.67.4 (PCCW 公共 DNS)
+# 2. 协议: +tcp (绕过 NAT 机器的 UDP 53 劫持)
+# 3. 如果 PCCW 连不上，尝试 HKBN (香港宽频) 203.80.96.10
 
-echo -e "\n🌏 [大陆视角] 解析 IP (DNS: $CN_DNS)："
+HK_DNS_IP="202.14.67.4" # PCCW
+HK_IPS=$(dig +short "$DOMAIN" @"$HK_DNS_IP" +tcp +time=3 +tries=1 | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u)
+
+# 如果 PCCW 失败（可能被墙或超时），尝试备用 HKBN
+if [[ -z "$HK_IPS" ]]; then
+    HK_DNS_IP="203.80.96.10" # HKBN
+    HK_IPS=$(dig +short "$DOMAIN" @"$HK_DNS_IP" +tcp +time=3 +tries=1 | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u)
+fi
+
+echo -e "\n🌏 [大陆视角] 解析 IP (DNS: 114.114.114.114)："
 if [[ -n "$CN_IPS" ]]; then echo "$CN_IPS"; else echo "❌ 未解析到 IP"; fi
 
-echo -e "\n🌍 [海外视角] 解析 IP (Cloudflare DoH)："
-if [[ -n "$HK_IPS" ]]; then echo "$HK_IPS"; else echo "❌ 未解析到 IP (或域名无海外解析)"; fi
+echo -e "\n🇭🇰 [香港视角] 解析 IP (DNS: $HK_DNS_IP via TCP)："
+if [[ -n "$HK_IPS" ]]; then 
+    echo "$HK_IPS"
+else 
+    echo "❌ 获取失败 (可能原因: 防火墙拦截了到香港的 TCP DNS 流量)"
+fi
 
 # --- 4. 本机出口 ---
 EXIT_IP=$(curl -s --max-time 3 https://api.ip.sb/ip -A "Mozilla/5.0")
@@ -63,7 +76,7 @@ echo -e "\n🚀 [本机出口] IP："
 [[ -n "$EXIT_IP" ]] && echo "$EXIT_IP" || echo "❌ 获取失败"
 
 # --- 5. 归属地信息 ---
-echo -e "\n📊 [归属地信息]："
+echo -e "\n📊 [IP 归属地信息]："
 ALL_IPS=$(echo -e "$CN_IPS\n$HK_IPS\n$EXIT_IP" | sort -u | grep -v "^$")
 
 for ip in $ALL_IPS; do
@@ -71,7 +84,7 @@ for ip in $ALL_IPS; do
     
     TAG=""
     [[ "$CN_IPS" =~ "$ip" ]] && TAG="[大陆入口]"
-    [[ "$HK_IPS" =~ "$ip" ]] && TAG="${TAG}[海外入口]"
+    [[ "$HK_IPS" =~ "$ip" ]] && TAG="${TAG}[香港入口]"
     [[ "$EXIT_IP" == "$ip" ]] && TAG="${TAG}[本机出口]"
     
     echo -e "$ip \t→ ${INFO:-未知} \t$TAG"
