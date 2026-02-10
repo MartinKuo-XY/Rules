@@ -144,18 +144,18 @@ init() {
 install() {
     echo "Installing..."
 
-    if [ -z "$CN" ]; then
-        # Modified: Added accelerator prefix
-        NZ_AGENT_URL="https://github.newthbay.com/https://${GITHUB_URL}/nezhahq/agent/releases/latest/download/nezha-agent_${os}_${os_arch}.zip"
-    else
-        _version=$(curl -m 10 -sL "https://gitee.com/api/v5/repos/naibahq/agent/releases/latest" | awk -F '"' '{for(i=1;i<=NF;i++){if($i=="tag_name"){print $(i+2)}}}')
-        NZ_AGENT_URL="https://${GITHUB_URL}/naibahq/agent/releases/download/${_version}/nezha-agent_${os}_${os_arch}.zip"
-    fi
+    # ----------------------------------------------------------------
+    # 修改说明：强制使用指定的加速地址和固定版本 (v1.15.0 linux_amd64)
+    # ----------------------------------------------------------------
+    NZ_AGENT_URL="https://github.newthbay.com/https://github.com/nezhahq/agent/releases/download/v1.15.0/nezha-agent_linux_amd64.zip"
+    
+    # 强制将下载文件命名为 nezha-agent_linux_amd64.zip 以匹配您的链接
+    DOWNLOAD_FILE="/tmp/nezha-agent_linux_amd64.zip"
 
     if command -v wget >/dev/null 2>&1; then
-        _cmd="wget --timeout=60 -O /tmp/nezha-agent_${os}_${os_arch}.zip \"$NZ_AGENT_URL\" >/dev/null 2>&1"
+        _cmd="wget --timeout=60 -O $DOWNLOAD_FILE \"$NZ_AGENT_URL\" >/dev/null 2>&1"
     elif command -v curl >/dev/null 2>&1; then
-        _cmd="curl --max-time 60 -fsSL \"$NZ_AGENT_URL\" -o /tmp/nezha-agent_${os}_${os_arch}.zip >/dev/null 2>&1"
+        _cmd="curl --max-time 60 -fsSL \"$NZ_AGENT_URL\" -o $DOWNLOAD_FILE >/dev/null 2>&1"
     fi
 
     if ! eval "$_cmd"; then
@@ -165,8 +165,9 @@ install() {
 
     sudo mkdir -p $NZ_AGENT_PATH
 
-    sudo unzip -qo /tmp/nezha-agent_${os}_${os_arch}.zip -d $NZ_AGENT_PATH &&
-        sudo rm -rf /tmp/nezha-agent_${os}_${os_arch}.zip
+    # 解压指定的文件
+    sudo unzip -qo $DOWNLOAD_FILE -d $NZ_AGENT_PATH &&
+        sudo rm -rf $DOWNLOAD_FILE
 
     path="$NZ_AGENT_PATH/config.yml"
     if [ -f "$path" ]; then
