@@ -1,14 +1,14 @@
-# 1. 清理旧文件，防止混淆
-rm -f alpine_socks.sh socks5.sh
+# 1. 强制清理旧的错误文件
+rm -f socks_alpine.sh socks5.sh
 
-# 2. 写入修正后的脚本内容
-cat > alpine_socks.sh << 'EOF'
+# 2. 安全写入脚本 (使用 END_OF_SCRIPT 防止冲突)
+cat > socks_alpine.sh << 'END_OF_SCRIPT'
 #!/bin/sh
-# Dante-server SOCKS5 管理脚本（Alpine Linux 完美适配版 v3）
+# Dante-server SOCKS5 管理脚本 (Alpine 最终修复版)
 
 set -e
 
-# 颜色定义
+# --- 变量定义 ---
 GREEN='\033[1;32m'
 RED='\033[1;31m'
 BLUE='\033[1;34m'
@@ -16,23 +16,24 @@ YELLOW='\033[1;33m'
 CYAN='\033[1;36m'
 NC='\033[0m'
 
-# Alpine 关键配置
 CONFIG_FILE="/etc/sockd.conf"
 PAM_FILE="/etc/pam.d/sockd"
 INFO_FILE="/usr/local/bin/socks5.info"
 SCRIPT_PATH="/usr/local/bin/socks5"
-SERVICE_NAME="sockd"  # Alpine下 dante 的服务名必须是 sockd
+SERVICE_NAME="sockd"
 
-# 检查 Root
+# --- 基础检查 ---
 if [ "$(id -u)" != "0" ]; then
-    echo "Error: 请使用 root 用户运行。"
+    echo "必须使用 root 运行"
     exit 1
 fi
 
-# 启用 Community 仓库
+# --- 功能函数 ---
+
 enable_community_repo() {
+    # 启用 community 仓库以安装 dante-server
     if ! grep -q "^http.*/community" /etc/apk/repositories; then
-        echo -e "${BLUE}启用 Community 仓库...${NC}"
+        echo "正在启用 Community 仓库..."
         if grep -q "#.*community" /etc/apk/repositories; then
              sed -i 's/^#\(.*community\)/\1/' /etc/apk/repositories
         else
@@ -44,31 +45,30 @@ enable_community_repo() {
 }
 
 install_deps() {
-    echo -e "${BLUE}安装依赖...${NC}"
+    echo -e "${BLUE}安装依赖组件...${NC}"
     enable_community_repo
     apk update
-    # linux-pam 用于认证，curl 用于获取IP
-    apk add dante-server openssl linux-pam curl
+    apk add dante-server openssl linux-pam curl iproute2
     
-    # 二次检查服务文件是否存在
+    # 修复可能缺失的服务软链
     if [ ! -f "/etc/init.d/$SERVICE_NAME" ]; then
-        echo -e "${RED}错误：未找到 $SERVICE_NAME 服务文件。${NC}"
-        echo "尝试修复软链接..."
-        ln -s /usr/sbin/sockd /etc/init.d/sockd 2>/dev/null || true
+        if [ -f "/usr/sbin/sockd" ]; then
+            ln -s /usr/sbin/sockd /etc/init.d/sockd 2>/dev/null || true
+        fi
     fi
 }
 
 detect_iface() {
     iface=$(ip route | grep '^default' | awk '{print $5}' | head -n1)
     if [ -z "$iface" ]; then
-        printf "无法检测网卡，请输入出口网卡名称 (如 eth0): "
-        read -r iface
+        # 如果自动检测失败，尝试列出第一个非 lo 网卡
+        iface=$(ip -o link show | awk -F': ' '{print $2}' | grep -v "lo" | head -n1)
     fi
     echo "$iface"
 }
 
-# 配置 PAM (解决账号密码认证失败的问题)
 configure_pam() {
+    # 写入 PAM 配置，用于账号密码验证
     cat > "$PAM_FILE" <<EOF
 auth     required pam_unix.so
 account  required pam_unix.so
@@ -80,25 +80,25 @@ gen_socks5_config() {
     read -r input_port
     base_port=${input_port:-1080}
 
-    printf "是否启用用户名密码认证？[y/N]: "
+    printf "是否启用用户认证 (y/n) [默认: n]: "
     read -r auth
     auth_mode="none"
     
     case "$auth" in
         [Yy]*)
             auth_mode="username"
-            printf "用户名 [user]: "
-            read -r input_user
-            user=${input_user:-user}
+            printf "用户名: "
+            read -r user
+            [ -z "$user" ] && user="user"
             
             pw=$(openssl rand -base64 8)
-            printf "密码 [%s]: " "$pw"
+            printf "密码 [随机: %s]: " "$pw"
             read -r input_pw
             pass=${input_pw:-$pw}
             
-            # 创建用户(无密码交互)
+            # 创建用户
             if id "$user" >/dev/null 2>&1; then
-                echo "用户 $user 已存在，更新密码..."
+                echo "用户已存在，更新密码..."
             else
                 adduser -D "$user"
             fi
@@ -109,14 +109,17 @@ gen_socks5_config() {
     esac
 
     outbound_iface=$(detect_iface)
+    if [ -z "$outbound_iface" ]; then
+        echo -e "${RED}错误：无法检测到网卡。${NC}"
+        outbound_iface="eth0"
+    fi
     
-    # 写入 dante 配置
-    cat > "$CONFIG_FILE" <<CONF
+    # 写入 Dante 配置文件
+    cat > "$CONFIG_FILE" <<EOF
 logoutput: syslog
 user.notprivileged: nobody
 user.libwrap: nobody
 
-# 认证模式
 method: $auth_mode
 clientmethod: none
 
@@ -133,10 +136,13 @@ pass {
     protocol: tcp udp
     log: error connect disconnect
 }
-CONF
+EOF
 
-    # 获取 IP
-    IP_ADDR=$(curl -s4 http://ipv4.icanhazip.com || ip addr show "$outbound_iface" | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+    # 获取IP
+    IP_ADDR=$(curl -s4 http://ipv4.icanhazip.com 2>/dev/null)
+    if [ -z "$IP_ADDR" ]; then
+        IP_ADDR=$(ip addr show "$outbound_iface" | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+    fi
 
     # 保存信息
     {
@@ -152,7 +158,7 @@ CONF
 }
 
 start_service() {
-    echo -e "${BLUE}启动服务 ($SERVICE_NAME)...${NC}"
+    echo -e "${BLUE}配置并启动服务 ($SERVICE_NAME)...${NC}"
     if rc-service "$SERVICE_NAME" status >/dev/null 2>&1; then
         rc-service "$SERVICE_NAME" restart
     else
@@ -173,70 +179,63 @@ uninstall_dante() {
     echo -e "${GREEN}卸载完成${NC}"
 }
 
-check_status() {
-    rc-service "$SERVICE_NAME" status
-}
-
 show_info() {
     if [ -f "$INFO_FILE" ]; then
-        echo -e "${CYAN}----------------------------------------${NC}"
+        echo -e "${CYAN}--- SOCKS5 配置信息 ---${NC}"
         cat "$INFO_FILE"
-        echo -e "${CYAN}----------------------------------------${NC}"
+        echo -e "${CYAN}-----------------------${NC}"
     else
-        echo "未找到配置信息"
+        echo "无配置信息"
     fi
 }
 
 create_shortcut() {
     cp "$0" "$SCRIPT_PATH"
     chmod +x "$SCRIPT_PATH"
-    echo -e "${GREEN}快捷命令已创建：socks5${NC}"
 }
 
 wait_input() {
-    printf "按回车键继续..."
+    printf "按回车继续..."
     read -r dummy
 }
 
 menu() {
     while true; do
         clear
-        echo -e "${CYAN}=== Alpine Dante SOCKS5 管理 ===${NC}"
-        echo "1. 安装/重装 Socks5"
-        echo "2. 卸载 Socks5"
-        echo "3. 启动服务"
-        echo "4. 停止服务"
-        echo "5. 重启服务"
-        echo "6. 修改配置"
-        echo "7. 显示连接信息"
-        echo "8. 检查状态"
+        echo -e "${CYAN}=== Alpine Socks5 管理 ===${NC}"
+        echo "1. 安装"
+        echo "2. 卸载"
+        echo "3. 启动"
+        echo "4. 停止"
+        echo "5. 重启"
+        echo "6. 重新配置"
+        echo "7. 查看信息"
         echo "0. 退出"
-        printf "请选择: "
+        printf "选择: "
         read -r choice
         case "$choice" in
             1) install_deps; gen_socks5_config; start_service; create_shortcut;
-               echo -e "\n${GREEN}搭建成功！${NC}"; show_info; wait_input;;
+               echo -e "\n${GREEN}安装成功${NC}"; show_info; wait_input;;
             2) uninstall_dante; wait_input;;
             3) start_service; wait_input;;
             4) stop_service; wait_input;;
             5) stop_service; start_service; wait_input;;
             6) gen_socks5_config; start_service; wait_input;;
             7) show_info; wait_input;;
-            8) check_status; wait_input;;
             0) exit 0;;
-            *) echo "无效选择"; sleep 1;;
+            *) echo "无效"; sleep 1;;
         esac
     done
 }
 
-# 入口
 if [ "$(basename "$0")" = "socks5" ]; then
     show_info
     wait_input
 fi
-menu
-EOF
 
-# 3. 赋予权限并运行
-chmod +x alpine_socks.sh
-./alpine_socks.sh
+menu
+END_OF_SCRIPT
+
+# 3. 运行
+chmod +x socks_alpine.sh
+./socks_alpine.sh
