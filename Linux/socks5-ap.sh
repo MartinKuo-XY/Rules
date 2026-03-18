@@ -1,6 +1,6 @@
 #!/bin/sh
-# Dante-server SOCKS5 管理脚本（Alpine Linux 专用版）
-# Author: Modified for Alpine
+# Dante-server SOCKS5 管理脚本（Alpine Linux 修正版 v2）
+# Author: Modified for Alpine (Fix Service Name & PAM)
 
 # 遇到错误立即退出
 set -e
@@ -14,8 +14,9 @@ CYAN='\033[1;36m'
 MAGENTA='\033[1;35m'
 NC='\033[0m'
 
-# Alpine 中 danted 的配置文件通常是 /etc/sockd.conf
+# Alpine 中 danted 的配置文件是 /etc/sockd.conf
 CONFIG_FILE="/etc/sockd.conf"
+PAM_FILE="/etc/pam.d/sockd"
 INFO_FILE="/usr/local/bin/socks5.info"
 SCRIPT_INSTALL_PATH="/usr/local/bin/socks5"
 
@@ -29,7 +30,6 @@ fi
 enable_community_repo() {
     if ! grep -q "^http.*/community" /etc/apk/repositories; then
         echo -e "${BLUE}正在启用 Community 仓库...${NC}"
-        # 取消注释 community 仓库行，或者如果没有则添加一个通用镜像
         if grep -q "#.*community" /etc/apk/repositories; then
              sed -i 's/^#\(.*community\)/\1/' /etc/apk/repositories
         else
@@ -49,7 +49,6 @@ install_deps() {
 }
 
 detect_iface() {
-    # Alpine 下使用 ip route 获取默认路由网卡
     iface=$(ip route | grep '^default' | awk '{print $5}' | head -n1)
     if [ -z "$iface" ]; then
         echo -e "${RED}无法检测出口网卡，请手动指定${NC}"
@@ -57,6 +56,15 @@ detect_iface() {
         read -r iface
     fi
     echo "$iface"
+}
+
+configure_pam() {
+    # 只有在使用用户名/密码认证时才需要配置 PAM
+    # 创建 /etc/pam.d/sockd 文件，允许使用系统用户认证
+    cat > "$PAM_FILE" <<EOF
+auth required pam_unix.so
+account required pam_unix.so
+EOF
 }
 
 gen_socks5_config() {
@@ -82,9 +90,16 @@ gen_socks5_config() {
             pass=${input_pw:-$pw}
             
             # Alpine 创建用户 (无密码模式)
-            id "$user" >/dev/null 2>&1 || adduser -D "$user"
+            if id "$user" >/dev/null 2>&1; then
+                echo "用户 $user 已存在，将更新密码"
+            else
+                adduser -D "$user"
+            fi
             # 设置密码
             echo "$user:$pass" | chpasswd
+            
+            # 配置 PAM
+            configure_pam
             ;;
     esac
 
@@ -115,7 +130,7 @@ pass {
 }
 EOF
 
-    # 获取外网 IP (Alpine 没有 hostname -I)
+    # 获取外网 IP
     IP_ADDR=$(wget -qO- http://ipv4.icanhazip.com 2>/dev/null)
     if [ -z "$IP_ADDR" ]; then
         IP_ADDR=$(ip addr show "$outbound_iface" | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
@@ -135,24 +150,31 @@ EOF
 }
 
 start_service() {
-    # OpenRC 命令
-    rc-update add dante default
-    rc-service dante restart
+    # 修正：Alpine 上 dante 的服务名是 sockd
+    echo -e "${BLUE}正在启动 sockd 服务...${NC}"
+    if rc-service sockd status >/dev/null 2>&1; then
+        rc-service sockd restart
+    else
+        rc-update add sockd default
+        rc-service sockd start
+    fi
 }
 
 stop_service() {
-    rc-service dante stop
+    rc-service sockd stop
 }
 
 uninstall_dante() {
     stop_service
-    rc-update del dante default
+    rc-update del sockd default
     apk del dante-server
-    rm -f "$CONFIG_FILE" "$INFO_FILE" "$SCRIPT_INSTALL_PATH"
+    # 删除用户创建的配置文件
+    rm -f "$CONFIG_FILE" "$INFO_FILE" "$SCRIPT_INSTALL_PATH" "$PAM_FILE"
+    echo -e "${GREEN}卸载完成${NC}"
 }
 
 check_status() {
-    if rc-service dante status >/dev/null 2>&1; then
+    if rc-service sockd status >/dev/null 2>&1; then
         echo "服务状态: 运行中"
     else
         echo "服务状态: 未运行"
@@ -235,7 +257,6 @@ menu() {
 }
 
 install_dante() {
-    # 实际上依赖安装部分已经包含了安装命令，这里主要作为占位符保持逻辑一致
     # 确保 config 目录结构存在
     touch "$CONFIG_FILE"
 }
