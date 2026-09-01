@@ -1,0 +1,328 @@
+ipv6: true
+vif_only: true
+block_quic: false
+proxy_latency_test_url: https://www.amazon.com
+direct_latency_test_url: https://www.baidu.com
+compat_route: false
+include_all_networks: false
+include_apns: false
+include_cellular_services: false
+include_local_networks: false
+dns:
+  bootstrap:
+  - 235.5.5.5
+  - 119.29.29.29
+  upstreams:
+    国外:
+    - tls://1.1.1.1
+    - https://8.8.8.8/dns-query
+    - https://1.1.1.1/dns-query
+    - tls://dns.google
+    国内:
+    - tls://dns.alidns.com
+    - tls://dot.pub
+    - https://doh.pub/dns-query
+    - https://dns.alidns.com/dns-query
+    腾讯:
+    - tls://dot.pub
+    - https://doh.pub/dns-query
+    阿里巴巴:
+    - tls://dns.alidns.com
+    - https://dns.alidns.com/dns-query
+    字节跳动:
+    - 180.184.2.2
+    - 180.184.1.1
+  forward:
+  - proxy_rule_set:
+      match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/DNS/ByteDance.list
+      value: 字节跳动
+      disabled: false
+  - proxy_rule_set:
+      match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/DNS/TestFlight.list
+      value: 国外
+      disabled: true
+  - proxy_rule_set:
+      match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/DNS/Apple.list
+      value: 国内
+      disabled: true
+  - proxy_rule_set:
+      match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/DNS/Alibaba.list
+      value: 阿里巴巴
+      disabled: false
+  - proxy_rule_set:
+      match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/DNS/Tencent.list
+      value: 腾讯
+      disabled: false
+  - proxy_rule_set:
+      match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/DNS/ChinaMax.list
+      value: 国内
+      disabled: true
+  - proxy_rule_set:
+      match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/DNS/Global.list
+      value: 国外
+      disabled: true
+  - domain_wildcard:
+      match: '*'
+      value: 国外
+      disabled: true
+  public_ip_lookup_url: https://ifconfig.me/ip
+policy_groups:
+- select:
+    name: 代理服务
+    policies:
+    - 🇭🇰 MartinKuo.TCP
+    - 🇭🇰 WireGuard.UDP
+    - 🇭🇰 Snell
+    - 🇭🇰 ShadowTLS.HK
+    - 🇭🇰 MartinKuo.Reality
+    - 🇭🇰 BestVM｜专线聚合
+    flatten: false
+    icon: 🚀
+    hidden: false
+- fallback:
+    name: 微信
+    policies:
+    - 大陆直连
+    flatten: false
+    icon: https://image-1257009724.cos.ap-hongkong.myqcloud.com/ImageWeChat2%20.png
+    hidden: false
+- auto_test:
+    name: 小红书
+    policies:
+    - 大陆直连
+    flatten: false
+    icon: https://image-1257009724.cos.ap-hongkong.myqcloud.com/Image%E5%B0%8F%E7%BA%A2%E4%B9%A6.png
+    hidden: false
+- auto_test:
+    name: 谷歌
+    policies:
+    - 代理服务
+    flatten: false
+    icon: https://image-1257009724.cos.ap-hongkong.myqcloud.com/Imagegoogle%20(1).png
+    hidden: false
+- auto_test:
+    name: 油管
+    policies:
+    - ChatGPT-lg7ih9n4
+    flatten: false
+    icon: https://image-1257009724.cos.ap-hongkong.myqcloud.com/Imageyoutube.png
+    hidden: false
+- fallback:
+    name: 推特
+    policies:
+    - 代理服务
+    flatten: false
+    icon: https://image-1257009724.cos.ap-hongkong.myqcloud.com/Imagetuite-copy.png
+    hidden: false
+- fallback:
+    name: 电报
+    policies:
+    - 代理服务
+    flatten: false
+    icon: https://image-1257009724.cos.ap-hongkong.myqcloud.com/ImageTelegram%20(Telegram)-copy.png
+    hidden: false
+- select:
+    name: API Server｜策略
+    policies:
+    - 🇵🇭 GraceHub｜专线聚合
+    - 🇵🇭 WireGuard｜专线聚合
+    flatten: false
+    icon: https://image-1257009724.cos.ap-hongkong.myqcloud.com/ImageChatGPT-copy.png
+    hidden: false
+- auto_test:
+    name: Gcash
+    policies:
+    - 🇵🇭 GraceHub｜专线聚合
+    - 🇵🇭 WireGuard｜专线聚合
+    flatten: false
+    icon: https://image-1257009724.cos.ap-hongkong.myqcloud.com/Imagegcash.png
+    hidden: false
+- fallback:
+    name: 苹果
+    policies:
+    - 大陆直连
+    flatten: false
+    icon: https://img.icons8.com/?size=100&id=bN2IQyaCUVk5&format=png&color=000000
+    hidden: false
+- fallback:
+    name: 大陆直连
+    policies:
+    - DIRECT
+    flatten: false
+    icon: 🇨🇳
+    hidden: false
+- select:
+    name: Proxy.Philippines
+    policies:
+    - 🇵🇭 GraceHub｜专线聚合
+    flatten: false
+    filter: 🇵🇭
+    icon: 🇵🇭
+    hidden: true
+- external:
+    name: Proxy.Thailand
+    type: select
+    urls:
+    - https://byte.newthbay.com/s/hw01rdzf
+    filter: 🇹🇭
+    icon: 🇹🇭
+    hidden: true
+rules:
+- domain_keyword:
+    name: ByteFlowDash
+    match: vraymall
+    policy: 代理服务
+    disabled: false
+- rule_set:
+    name: 🚫 腾讯视频去广告
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/Rule%20Set/TencentVideo%20ADB.List
+    policy: REJECT
+    disabled: false
+- rule_set:
+    name: 🚫 去广告
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/main/Surge/Rule Set/ADB.list
+    policy: REJECT
+    disabled: false
+- domain_regex:
+    match: ^ad\..*|^ads\..*
+    policy: REJECT
+- rule_set:
+    name: 📝 Github
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/main/Surge/Rule%20Set/Github.list
+    policy: HongKong｜云途NAT.C
+    disabled: true
+- rule_set:
+    name: 📋 Business.Direct
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/main/Surge/Rule%20Set/Business%20-%20Direct.list
+    policy: 大陆直连
+    disabled: false
+- rule_set:
+    name: 📕 RedNote
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/Rule%20Set/XiaoHongShu.list
+    policy: 小红书
+    disabled: false
+- rule_set:
+    name: 🛰 WeChat
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/Rule%20Set/Wechat.list
+    policy: 微信
+    disabled: false
+- rule_set:
+    name: 📜 GCash分流
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/Rule%20Set/Gcash.list
+    policy: Gcash
+    disabled: false
+- rule_set:
+    name: 📒 Business.Extra
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/main/Surge/Rule%20Set/Business%20-%20Extra.list
+    policy: API Server｜策略
+    disabled: false
+- rule_set:
+    name: 🤖 ChatGPT｜策略
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/Rule%20Set/API
+    policy: API Server｜策略
+    disabled: false
+- domain_suffix:
+    name: 💼 ERP｜外网
+    match: bigseller.com
+    policy: 代理服务
+    disabled: false
+- rule_set:
+    name: 🎬 Youtube
+    match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/YouTube/YouTube.list
+    policy: 油管
+    disabled: false
+- rule_set:
+    name: 🍎 Apple.List
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/main/Surge/Rule%20Set/Apple.list
+    policy: 苹果
+    disabled: false
+- rule_set:
+    name: 🔍 Google
+    match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Google/Google.list
+    policy: 谷歌
+    disabled: false
+- rule_set:
+    name: ✈️ Telegram
+    match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Telegram/Telegram.list
+    policy: 电报
+    disabled: false
+- rule_set:
+    name: 🔊 Twitter
+    match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Twitter/Twitter.list
+    policy: 推特
+    disabled: false
+- rule_set:
+    name: 🤖 API Server
+    match: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/OpenAI/OpenAI.list
+    policy: API Server｜策略
+    disabled: false
+- domain:
+    match: ifconfig.me
+    policy: 大陆直连
+    disabled: false
+- rule_set:
+    name: 🇨🇳 China.List
+    match: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/Rule%20Set/ChinaMax_All.list
+    policy: 大陆直连
+    disabled: false
+- domain_suffix:
+    name: 🇨🇳 大陆直连
+    match: cn
+    policy: 大陆直连
+    disabled: false
+- geoip:
+    name: 🇨🇳 大陆GeoIP
+    match: CN
+    policy: 大陆直连
+    no_resolve: false
+    disabled: false
+- ip_cidr:
+    match: 192.168.0.0/16
+    policy: 大陆直连
+    no_resolve: false
+    disabled: false
+- ip_cidr:
+    match: 10.0.0.0/8
+    policy: 大陆直连
+    no_resolve: false
+    disabled: false
+- ip_cidr:
+    match: 127.0.0.0/8
+    policy: 大陆直连
+    no_resolve: false
+    disabled: false
+- ip_cidr:
+    match: 172.16.0.0/12
+    policy: 大陆直连
+    no_resolve: false
+    disabled: false
+- ip_cidr:
+    match: 192.128.0.0/16
+    policy: 大陆直连
+    no_resolve: false
+    disabled: false
+- ip_cidr:
+    match: 224.0.0.0/24
+    policy: 大陆直连
+    no_resolve: false
+    disabled: false
+- default:
+    name: 🚀 Proxy
+    policy: 代理服务
+http_captures:
+  includes:
+  - '*'
+  - gcash
+modules:
+- name: Shopee分流规则
+  url: https://raw.githubusercontent.com/MartinKuo-XY/Rules/refs/heads/main/Surge/Module/Shopee.module
+  enabled: true
+- name: Ads-02 Block
+  url: https://raw.githubusercontent.com/MartinKuo-XY/Rules/main/Surge/Module/Ads-02%20Block.module
+  enabled: true
+- name: Ads-01 Block
+  url: https://raw.githubusercontent.com/MartinKuo-XY/Rules/main/Surge/Module/Ads-01%20Block.module
+  enabled: true
+- name: 规则转换
+  url: https://raw.githubusercontent.com/Script-Hub-Org/Script-Hub/main/modules/script-hub.surge.sgmodule
+  enabled: true
